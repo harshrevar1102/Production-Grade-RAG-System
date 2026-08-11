@@ -1,10 +1,13 @@
 import os
 import tempfile
+import uuid
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
 from app.services.pdf_service import extract_text_from_pdf
 from app.services.chunking_service import create_chunks
+from app.services.embedding_service import generate_embeddings
+from app.services.vector_service import store_chunks
 
 
 router = APIRouter(
@@ -31,7 +34,6 @@ async def process_document(file: UploadFile = File(...)):
     temp_path = None
 
     try:
-
         file_bytes = await file.read()
 
         with tempfile.NamedTemporaryFile(
@@ -42,6 +44,10 @@ async def process_document(file: UploadFile = File(...)):
             temp_file.write(file_bytes)
             temp_path = temp_file.name
 
+        # ==========================================
+        # 1. EXTRACT TEXT
+        # ==========================================
+
         pages = extract_text_from_pdf(temp_path)
 
         if not pages:
@@ -50,14 +56,55 @@ async def process_document(file: UploadFile = File(...)):
                 detail="No readable text found in PDF."
             )
 
+        # ==========================================
+        # 2. CREATE CHUNKS
+        # ==========================================
+
         chunks = create_chunks(pages)
+
+        if not chunks:
+            raise HTTPException(
+                status_code=400,
+                detail="No chunks were created from document."
+            )
+
+        # ==========================================
+        # 3. GENERATE DOCUMENT ID
+        # ==========================================
+
+        document_id = str(uuid.uuid4())
+
+        # ==========================================
+        # 4. GENERATE EMBEDDINGS
+        # ==========================================
+
+        texts = [
+            chunk["text"]
+            for chunk in chunks
+        ]
+
+        embeddings = generate_embeddings(texts)
+
+        # ==========================================
+        # 5. STORE IN VECTOR DATABASE
+        # ==========================================
+
+        vector_result = store_chunks(
+            document_id=document_id,
+            chunks=chunks,
+            embeddings=embeddings
+        )
 
         return {
             "success": True,
+            "document_id": document_id,
             "filename": file.filename,
             "total_pages": len(pages),
             "total_chunks": len(chunks),
-            "chunks": chunks
+            "embedding_dimensions": len(embeddings[0]),
+            "vector_database": "ChromaDB",
+            "collection": vector_result["collection"],
+            "stored_chunks": vector_result["stored_chunks"]
         }
 
     except HTTPException:
