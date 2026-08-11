@@ -2,7 +2,7 @@ const express = require("express");
 const morgan = require("morgan");
 
 const authRoutes = require("./routes/auth.routes");
-
+const documentRoutes = require("./routes/document.routes");
 const app = express();
 
 // ==========================================
@@ -24,6 +24,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/documents", documentRoutes);
+
 
 // ==========================================
 // ERROR HANDLER
