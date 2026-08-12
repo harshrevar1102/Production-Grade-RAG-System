@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.ingestion import router as ingestion_router
+from app.api.retrieval import router as retrieval_router
 
 
 app = FastAPI(
@@ -10,6 +11,7 @@ app = FastAPI(
 
 
 app.include_router(ingestion_router)
+app.include_router(retrieval_router)
 
 
 @app.get("/")
