@@ -8,7 +8,7 @@ from app.services.pdf_service import extract_text_from_pdf
 from app.services.chunking_service import create_chunks
 from app.services.embedding_service import generate_embeddings
 from app.services.vector_service import store_chunks
-
+from app.services.bm25_service import save_index
 
 router = APIRouter(
     prefix="/api/ingestion",
@@ -60,7 +60,12 @@ async def process_document(file: UploadFile = File(...)):
         # 2. CREATE CHUNKS
         # ==========================================
 
-        chunks = create_chunks(pages)
+        
+        
+        save_index(
+            document_id=document_id,
+            chunks=chunks
+        )
 
         if not chunks:
             raise HTTPException(

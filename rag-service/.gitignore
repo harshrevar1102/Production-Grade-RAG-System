@@ -1,5 +1,5 @@
+bm25_indexes/
+chroma_db/
 venv/
 __pycache__/
-*.pyc
 .env
-chroma_db/

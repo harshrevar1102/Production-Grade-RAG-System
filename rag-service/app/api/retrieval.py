@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.services.retrieval_service import retrieve_chunks
+from app.services.hybrid_retrieval_service import hybrid_retrieve
 
 
 router = APIRouter(
@@ -21,16 +21,17 @@ def search_document(request: RetrievalRequest):
 
     try:
 
-        chunks = retrieve_chunks(
+        results = hybrid_retrieve(
             document_id=request.document_id,
             query=request.query,
-            top_k=request.top_k
+            top_k=request.top_k,
+            candidate_k=20
         )
 
         return {
             "success": True,
             "query": request.query,
-            "results": chunks
+            "results": results
         }
 
     except Exception as error:
