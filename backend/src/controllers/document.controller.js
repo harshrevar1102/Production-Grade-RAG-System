@@ -137,9 +137,95 @@ const deleteDocument = async (req, res) => {
   }
 };
 
+const { askDocument } = require("../services/rag.service");
+const prisma = require("../config/prisma");
+
+
+const askDocumentQuestion = async (req, res) => {
+
+  try {
+
+    const { documentId } = req.params;
+    const { query } = req.body;
+
+    // ==========================================
+    // VALIDATE QUERY
+    // ==========================================
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Query is required"
+      });
+    }
+
+    // ==========================================
+    // FIND DOCUMENT
+    // ==========================================
+
+    const document = await prisma.document.findFirst({
+      where: {
+        id: documentId,
+        userId: req.user.id
+      }
+    });
+
+    // ==========================================
+    // VERIFY OWNERSHIP
+    // ==========================================
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found"
+      });
+    }
+
+    // ==========================================
+    // CALL RAG SERVICE
+    // ==========================================
+
+    const ragResponse = await askDocument({
+      documentId,
+      query: query.trim(),
+      topK: 5
+    });
+
+    // ==========================================
+    // RETURN RESPONSE
+    // ==========================================
+
+    return res.status(200).json({
+      success: true,
+      document: {
+        id: document.id,
+        filename: document.filename
+      },
+      query: ragResponse.query,
+      answer: ragResponse.answer,
+      sources: ragResponse.sources
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Ask Document Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process question"
+    });
+  }
+};
+
+
+
 module.exports = {
   uploadDocument,
   getDocuments,
   getDocument,
   deleteDocument,
+  askDocumentQuestion
 };

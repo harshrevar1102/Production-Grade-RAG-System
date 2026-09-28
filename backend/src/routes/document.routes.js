@@ -5,6 +5,12 @@ const router = express.Router();
 const upload = require("../middleware/upload.middleware");
 const authMiddleware = require("../middleware/auth.middleware");
 
+
+const {
+  askDocumentQuestion
+} = require("../controllers/document.controller");
+
+
 const {
     uploadDocument,
     getDocuments,
@@ -39,6 +45,13 @@ router.delete(
     "/:id",
     authMiddleware,
     deleteDocument
+);
+
+
+router.post(
+  "/:documentId/ask",
+  authMiddleware,
+  askDocumentQuestion
 );
 
 module.exports = router;
